@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    container_name: zookeeper
+    hostname: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc -w 2 localhost 2181 || exit 0"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - event_network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    container_name: kafka
+    hostname: kafka
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - event_network
+
+  event_producer:
+    build:
+      context: .
+      dockerfile: producer/Dockerfile
+    container_name: event_producer
+    restart: on-failure
+    ports:
+      - "5000:5000"
+    environment:
+      KAFKA_BROKER_URL: ${KAFKA_BROKER_URL:-kafka:9092}
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-raw_events}
+      PRODUCER_HOST: ${PRODUCER_HOST:-0.0.0.0}
+      PRODUCER_PORT: ${PRODUCER_PORT:-5000}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      KAFKA_RETRIES: ${KAFKA_RETRIES:-10}
+      KAFKA_RETRY_BACKOFF_MS: ${KAFKA_RETRY_BACKOFF_MS:-2000}
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://localhost:5000/health').getcode() == 200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - event_network
+
+  event_consumer:
+    build:
+      context: .
+      dockerfile: consumer/Dockerfile
+    container_name: event_consumer
+    restart: on-failure
+    environment:
+      KAFKA_BROKER_URL: ${KAFKA_BROKER_URL:-kafka:9092}
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-raw_events}
+      CONSUMER_GROUP_ID: ${CONSUMER_GROUP_ID:-event_processing_group}
+      AUTO_OFFSET_RESET: ${AUTO_OFFSET_RESET:-earliest}
+      ENABLE_AUTO_COMMIT: ${ENABLE_AUTO_COMMIT:-true}
+      OUTPUT_LOG_PATH: ${OUTPUT_LOG_PATH:-/app/data/processed_events.log}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      KAFKA_RETRIES: ${KAFKA_RETRIES:-10}
+      KAFKA_RETRY_BACKOFF_MS: ${KAFKA_RETRY_BACKOFF_MS:-2000}
+    volumes:
+      - processed_data:/app/data
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - event_network
+
+volumes:
+  processed_data:
+    driver: local
+
+networks:
+  event_network:
+    driver: bridge

@@ -1,0 +1,74 @@
+[
+  {
+    "description": "Standard Valid Telemetry Event - Temperature Sensor",
+    "is_valid": true,
+    "payload": {
+      "event_id": "evt-sensor-temp-101",
+      "timestamp": "2026-10-13T10:15:30Z",
+      "sensor_data": 24.85
+    }
+  },
+  {
+    "description": "Standard Valid Telemetry Event - Pressure Sensor",
+    "is_valid": true,
+    "payload": {
+      "event_id": "evt-sensor-press-204",
+      "timestamp": "2026-10-13T10:15:31Z",
+      "sensor_data": 1013.25
+    }
+  },
+  {
+    "description": "Boundary Valid Telemetry Event - Negative Sensor Value (Cryo Temperature)",
+    "is_valid": true,
+    "payload": {
+      "event_id": "evt-sensor-cryo-303",
+      "timestamp": "2026-10-13T10:15:32Z",
+      "sensor_data": -45.6
+    }
+  },
+  {
+    "description": "Boundary Valid Telemetry Event - Zero Sensor Measurement",
+    "is_valid": true,
+    "payload": {
+      "event_id": "evt-sensor-zero-404",
+      "timestamp": "2026-10-13T10:15:33Z",
+      "sensor_data": 0.0
+    }
+  },
+  {
+    "description": "Invalid Event - Missing sensor_data Property",
+    "is_valid": false,
+    "payload": {
+      "event_id": "evt-sensor-err-501",
+      "timestamp": "2026-10-13T10:15:34Z"
+    }
+  },
+  {
+    "description": "Invalid Event - String Instead of Numeric Sensor Data",
+    "is_valid": false,
+    "payload": {
+      "event_id": "evt-sensor-err-502",
+      "timestamp": "2026-10-13T10:15:35Z",
+      "sensor_data": "HIGH_ALARM"
+    }
+  },
+  {
+    "description": "Invalid Event - Malformed Timestamp String",
+    "is_valid": false,
+    "payload": {
+      "event_id": "evt-sensor-err-503",
+      "timestamp": "Tuesday October 13th 2026",
+      "sensor_data": 18.2
+    }
+  },
+  {
+    "description": "Invalid Event - Disallowed Extra Field",
+    "is_valid": false,
+    "payload": {
+      "event_id": "evt-sensor-err-504",
+      "timestamp": "2026-10-13T10:15:36Z",
+      "sensor_data": 32.1,
+      "unauthorized_attribute": "hack_attempt"
+    }
+  }
+]

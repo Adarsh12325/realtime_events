@@ -1,0 +1,8 @@
+# Root requirements for local development and test execution
+Flask>=3.0.0
+kafka-python>=2.0.2
+jsonschema>=4.18.0
+python-dotenv>=1.0.0
+pytest>=8.0.0
+pytest-cov>=4.1.0
+requests>=2.31.0
