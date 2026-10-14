@@ -186,7 +186,7 @@ All events exchanged across the pipeline adhere strictly to the following specif
 
 ### Step 1: Clone the Repository & Configure Environment
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/Adarsh12325/realtime_events.git
 cd realtime_events
 
 # Copy the example environment file if .env is missing
